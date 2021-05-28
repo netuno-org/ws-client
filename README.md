@@ -1,4 +1,4 @@
-# auth-client
+# ws-client
 
 Client to integrations with Netuno WebSocket and Services.
 
@@ -73,7 +73,9 @@ Remove listener:
 _ws.removeListener(listenerRef);
 ```
 
-### Send
+### Send Service
+
+Send data to the service, and the output comes in the associated listener.
 
 ```
 _ws.sendService({
