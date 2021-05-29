@@ -12,7 +12,7 @@ This module makes is easy to support WebSocket in web applications.
 
 ### Import
 
-`import _auth from '@netuno/ws-client';`
+`import _ws from '@netuno/ws-client';`
 
 ### Config
 

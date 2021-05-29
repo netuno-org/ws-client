@@ -74,7 +74,6 @@ _ws.connect = (args)=> {
             data = JSON.parse(event.data);
         } catch { }
         settings.message(data, event);
-        debugger;
         const service = ensureServicePrefix(data.service);
         if (typeof(data.service) == "string" && servicesListeners[service]) {
             servicesListeners[service].forEach((listenerData) => {
