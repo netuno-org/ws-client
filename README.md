@@ -22,7 +22,8 @@ Defines the main events:
 _ws.config({
     url: 'ws://localhost:9000/ws/example',
     servicesPrefix: '/services',
-    method: 'GET', 
+    method: 'GET',
+    autoReconnect: true,
     connect: (event) => {
         ...
     },

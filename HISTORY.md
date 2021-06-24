@@ -1,3 +1,7 @@
+# 1.0.2 / 2021-06-24
+
+Auto-reconnect configuration added and tick timer removed.
+
 # 1.0.1 / 2021-05-29
 
 Instruction fixes and debugger removed.

@@ -15,6 +15,7 @@ function Sandbox() {
         _ws.config({
             url: 'ws://localhost:9000/socket/app/room/main',
             method: 'POST',
+            autoReconnect: true,
             connect: (event) => {
                 setConnected(true);
             },

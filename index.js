@@ -10,7 +10,8 @@ const config = {
     connect: (event) => { },
     close: (event) => { },
     error: (error) => { },
-    message: (data, event) => { }
+    message: (data, event) => { },
+    autoReconnect: true
 };
 
 let webSocket = null;
@@ -54,7 +55,7 @@ _ws.connect = (args)=> {
     if (webSocket != null && connected) {
         webSocket.close();
     }
-    webSocket = new WebSocket(`${config.url}`);
+    webSocket = new WebSocket(`${settings.url}`);
     webSocket.onopen = (event) => {
         connected = true;
         settings.connect(event);
@@ -62,6 +63,9 @@ _ws.connect = (args)=> {
     webSocket.onclose = (event) => {
         connected = false;
         settings.close(event);
+        if (settings.autoReconnect) {
+            window.setTimeout(()=> { _ws.connect(settings); }, 1000);
+        }
     };
     webSocket.onerror = (error) => {
         connected = false;
@@ -163,14 +167,5 @@ _ws.removeListener = (ref) => {
     const index = parseInt(refParts[1], 10);
     servicesListeners[service].splice(index, 1);
 };
-
-_ws.tick = () => {
-    if (!connected && !closed) {
-        _ws.connect();
-    }
-    window.setTimeout(() => _ws.tick(), 1000);
-};
-
-_ws.tick();
 
 export default _ws;
