@@ -63,7 +63,7 @@ _ws.connect = (args)=> {
     webSocket.onclose = (event) => {
         connected = false;
         settings.close(event);
-        if (settings.autoReconnect) {
+        if (settings.autoReconnect && closed === false) {
             window.setTimeout(()=> { _ws.connect(settings); }, 1000);
         }
     };
