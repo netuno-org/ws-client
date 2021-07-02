@@ -1,3 +1,7 @@
+# 1.0.5 / 2021-07-02
+
+When close, stop the background auto-reconnect timer.
+
 # 1.0.4 / 2021-07-02
 
 Avoid auto-reconnect with parallel threads.

@@ -113,6 +113,10 @@ _ws.connect = (args)=> {
 };
 
 _ws.close = () => {
+    if (timeoutAutoReconnect != null) {
+        window.clearTimeout(timeoutAutoReconnect);
+        timeoutAutoReconnect = null;
+    }
     closed = true;
     if (connected) {
         webSocket.close();
