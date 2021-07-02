@@ -18,6 +18,8 @@ let webSocket = null;
 
 const servicesListeners = {};
 
+let timeoutAutoReconnect = null;
+
 const ensureServicePrefix = (service) => {
     if (service.startsWith(config.servicesPrefix)) {
         return service;
@@ -48,6 +50,10 @@ _ws.isConnected = ()=> {
 };
 
 _ws.connect = (args)=> {
+    if (timeoutAutoReconnect != null) {
+        window.clearTimeout(timeoutAutoReconnect);
+        timeoutAutoReconnect = null;
+    }
     closed = false;
     const settings = {};
     extend(true, settings, config);
@@ -57,6 +63,10 @@ _ws.connect = (args)=> {
     }
     webSocket = new WebSocket(`${settings.url}`);
     webSocket.onopen = (event) => {
+        if (timeoutAutoReconnect != null) {
+            window.clearTimeout(timeoutAutoReconnect);
+            timeoutAutoReconnect = null;
+        }
         connected = true;
         settings.connect(event);
     };
@@ -64,10 +74,18 @@ _ws.connect = (args)=> {
         connected = false;
         settings.close(event);
         if (settings.autoReconnect && closed === false) {
-            window.setTimeout(()=> { _ws.connect(settings); }, 1000);
+            if (timeoutAutoReconnect != null) {
+                window.clearTimeout(timeoutAutoReconnect);
+                timeoutAutoReconnect = null;
+            }
+            timeoutAutoReconnect = window.setTimeout(()=> { _ws.connect(settings); }, 1000);
         }
     };
     webSocket.onerror = (error) => {
+        if (timeoutAutoReconnect != null) {
+            window.clearTimeout(timeoutAutoReconnect);
+            timeoutAutoReconnect = null;
+        }
         connected = false;
         settings.error(error);
         webSocket.close();

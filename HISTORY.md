@@ -1,3 +1,7 @@
+# 1.0.4 / 2021-07-02
+
+Avoid auto-reconnect with parallel threads.
+
 # 1.0.3 / 2021-06-24
 
 Auto-reconnect only if not purposefully closed.
