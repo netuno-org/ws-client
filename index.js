@@ -61,7 +61,15 @@ _ws.connect = (args)=> {
     if (webSocket != null && connected) {
         webSocket.close();
     }
-    webSocket = new WebSocket(`${settings.url}`);
+    let { url } = settings;
+    if (url.indexOf('/') == 0) {
+        let protocol = 'ws:';
+        if (window.location.protocol == 'https:') {
+            protocol = 'wss:';
+        }
+        url = `${protocol}//${window.location.host}${url}`;
+    }
+    webSocket = new WebSocket(url);
     webSocket.onopen = (event) => {
         if (timeoutAutoReconnect != null) {
             window.clearTimeout(timeoutAutoReconnect);
