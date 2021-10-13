@@ -83,7 +83,7 @@ _ws.connect = (args)=> {
             port = port.substring(0, port.length - 2) + '90';
         }
         if (frontendServer) {
-            endpoint = `${protocol}//${hostname}:${port}${url}`;
+            url = `${protocol}//${hostname}:${port}${url}`;
         } else {
             url = `${protocol}//${window.location.host}${url}`;
         }
