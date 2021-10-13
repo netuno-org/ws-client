@@ -62,12 +62,31 @@ _ws.connect = (args)=> {
         webSocket.close();
     }
     let { url } = settings;
-    if (url.indexOf('/') == 0) {
+    if (url && url.indexOf('/') == 0) {
         let protocol = 'ws:';
         if (window.location.protocol == 'https:') {
             protocol = 'wss:';
         }
-        url = `${protocol}//${window.location.host}${url}`;
+        let frontendServer = false;
+        let hostname = '';
+        let port = '';
+        if (window.location.host.indexOf(':')) {
+            hostname = window.location.host.substring(0, window.location.host.indexOf(':'));
+            port = window.location.host.substring(window.location.host.indexOf(':') + 1);
+        }
+        if (port == '3000') {
+            frontendServer = true;
+            port = '9000';
+        }
+        if (port.length > 2 && port.substring(port.length - 2, port.length) == '30') {
+            frontendServer = true;
+            port = port.substring(0, port.length - 2) + '90';
+        }
+        if (frontendServer) {
+            endpoint = `${protocol}//${hostname}:${port}${url}`;
+        } else {
+            url = `${protocol}//${window.location.host}${url}`;
+        }
     }
     webSocket = new WebSocket(url);
     webSocket.onopen = (event) => {
