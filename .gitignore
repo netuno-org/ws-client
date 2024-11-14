@@ -103,7 +103,10 @@ dist
 # TernJS port file
 .tern-port
 
+.idea
 
 .swp
 *~*
 *#*
+
+pnpm-lock.yaml
