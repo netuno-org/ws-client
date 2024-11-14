@@ -7,7 +7,7 @@ const closed = {
   'default': true
 };
 
-const configs = {
+const config = {
   'default': {
     url: null,
     servicesPrefix: '/services',
@@ -26,16 +26,26 @@ const servicesListeners = {};
 
 const timeoutAutoReconnect = {};
 
-const ensureServicePrefix = (service) => {
-    if (service.startsWith(config.servicesPrefix)) {
+const ensureServicePrefix = (key, service) => {
+    if (service.startsWith(config[key].servicesPrefix)) {
         return service;
     }
-    if (config.servicesPrefix.endsWith('/') && service.startsWith('/')) {
+    if (config[key].servicesPrefix.endsWith('/') && service.startsWith('/')) {
         service = service.substring(1);
-    } else if (!config.servicesPrefix.endsWith('/') && !service.startsWith('/')) {
+    } else if (!config[key].servicesPrefix.endsWith('/') && !service.startsWith('/')) {
         service = '/'+ service;
     }
-    return config.servicesPrefix + service;
+    return config[key].servicesPrefix + service;
+};
+
+const getServiceListeners = (key, service) => {
+    if (typeof(servicesListeners[key]) == 'undefined') {
+        servicesListeners[key] = {};
+    }
+    if (typeof(servicesListeners[key][service]) == "undefined") {
+        servicesListeners[key][service] = [ ];
+    }
+    return servicesListeners[key][service];
 };
 
 const _ws = (args) => {
@@ -48,10 +58,10 @@ _ws.config = (key = 'default', settings) => {
         key = 'default';
     }
     if (!!settings) {
-        extend(true, configs[key], settings);
+        extend(true, config[key], settings);
     }
     const newConfig = {};
-    extend(true, newConfig, configs[key]);
+    extend(true, newConfig, config[key]);
     return newConfig;
 };
 
@@ -70,7 +80,7 @@ _ws.connect = (key = 'default', args)=> {
     }
     closed[key] = false;
     const settings = {};
-    extend(true, settings, configs[key]);
+    extend(true, settings, config[key]);
     extend(true, settings, args);
     if (webSocket[key] != null && connected[key]) {
         webSocket[key].close();
@@ -137,9 +147,9 @@ _ws.connect = (key = 'default', args)=> {
             data = JSON.parse(event.data);
         } catch { }
         settings.message(data, event);
-        const service = ensureServicePrefix(data.service);
-        if (typeof(data.service) == "string" && servicesListeners[service]) {
-            servicesListeners[service].forEach((listenerData) => {
+        const service = ensureServicePrefix(key, data.service);
+        if (typeof(data.service) == "string") {
+            getServiceListeners(key, service).forEach((listenerData) => {
                 if (typeof(listenerData.method) !== "string"
                     || listenerData.method.toUpperCase() === data.method.toUpperCase()) {
                     if (listenerData.success && data.status >= 200 && data.status <= 299) {
@@ -190,6 +200,10 @@ _ws.send = (key = 'default', args)=> {
 };
 
 _ws.sendService = (key = 'default', args)=> {
+    if (!args && key && typeof key === 'object') {
+        args = key;
+        key = 'default';
+    }
     let message = {};
     if (typeof(args) === "string") {
         message.type = 'text';
@@ -212,7 +226,7 @@ _ws.sendService = (key = 'default', args)=> {
         if (typeof(message.method) == "undefined") {
             message.method = "GET";
         }
-        message.service = ensureServicePrefix(message.service);
+        message.service = ensureServicePrefix(key, message.service);
     }
     if (connected[key]) {
         webSocket[key].send(JSON.stringify(message));
@@ -220,20 +234,22 @@ _ws.sendService = (key = 'default', args)=> {
 };
 
 _ws.addListener = (key = 'default', data) => {
-    const service = ensureServicePrefix(data.service);
-    if (typeof(servicesListeners[key][service]) == "undefined") {
-        servicesListeners[key][service] = [ ];
+    if (!data && key && typeof key === 'object') {
+        data = key;
+        key = 'default';
     }
-    servicesListeners[key][service].push(data);
-    return key +':'+ service +':'+ (servicesListeners[key][service].length - 1);
+    console.log('addListener.data', data)
+    const service = ensureServicePrefix(key, data.service);
+    getServiceListeners(key, service).push(data);
+    return key +'~|~'+ service +'~|~'+ (getServiceListeners(key, service).length - 1);
 };
 
 _ws.removeListener = (ref) => {
-    const refParts = ref.split(':');
+    const refParts = ref.split('~|~');
     const key = refParts[0];
     const service = refParts[1];
     const index = parseInt(refParts[2], 10);
-    servicesListeners[key][service].splice(index, 1);
+    getServiceListeners(key, service).splice(index, 1);
 };
 
 export default _ws;
