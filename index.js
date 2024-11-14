@@ -1,9 +1,14 @@
 import extend from 'just-extend';
 
-let connected = false;
-let closed = true;
+const connected = {
+  'default': false
+};
+const closed = {
+  'default': true
+};
 
-const config = {
+const configs = {
+  'default': {
     url: null,
     servicesPrefix: '/services',
     method: 'GET',
@@ -12,13 +17,14 @@ const config = {
     error: (error) => { },
     message: (data, event) => { },
     autoReconnect: true
+  }
 };
 
-let webSocket = null;
+const webSocket = {};
 
 const servicesListeners = {};
 
-let timeoutAutoReconnect = null;
+const timeoutAutoReconnect = {};
 
 const ensureServicePrefix = (service) => {
     if (service.startsWith(config.servicesPrefix)) {
@@ -36,30 +42,38 @@ const _ws = (args) => {
     _ws.connect(args);
 };
 
-_ws.config = (settings) => {
+_ws.config = (key = 'default', settings) => {
+    if (!settings && key && typeof key === 'object') {
+        settings = key;
+        key = 'default';
+    }
     if (!!settings) {
-        extend(true, config, settings);
+        extend(true, configs[key], settings);
     }
     const newConfig = {};
-    extend(true, newConfig, config);
+    extend(true, newConfig, configs[key]);
     return newConfig;
 };
 
-_ws.isConnected = ()=> {
-    return connected;
+_ws.isConnected = (key = 'default')=> {
+    return connected[key];
 };
 
-_ws.connect = (args)=> {
-    if (timeoutAutoReconnect != null) {
-        window.clearTimeout(timeoutAutoReconnect);
-        timeoutAutoReconnect = null;
+_ws.connect = (key = 'default', args)=> {
+    if (!args && key && typeof key === 'object') {
+      args = key;
+      key = 'default';
     }
-    closed = false;
+    if (timeoutAutoReconnect[key] != null) {
+        window.clearTimeout(timeoutAutoReconnect[key]);
+        timeoutAutoReconnect[key] = null;
+    }
+    closed[key] = false;
     const settings = {};
-    extend(true, settings, config);
+    extend(true, settings, configs[key]);
     extend(true, settings, args);
-    if (webSocket != null && connected) {
-        webSocket.close();
+    if (webSocket[key] != null && connected[key]) {
+        webSocket[key].close();
     }
     let { url } = settings;
     if (url && url.indexOf('/') == 0) {
@@ -88,36 +102,36 @@ _ws.connect = (args)=> {
             url = `${protocol}//${window.location.host}${url}`;
         }
     }
-    webSocket = new WebSocket(url);
-    webSocket.onopen = (event) => {
-        if (timeoutAutoReconnect != null) {
-            window.clearTimeout(timeoutAutoReconnect);
-            timeoutAutoReconnect = null;
+    webSocket[key] = new WebSocket(url);
+    webSocket[key].onopen = (event) => {
+        if (timeoutAutoReconnect[key] != null) {
+            window.clearTimeout(timeoutAutoReconnect[key]);
+            timeoutAutoReconnect[key] = null;
         }
-        connected = true;
+        connected[key] = true;
         settings.connect(event);
     };
-    webSocket.onclose = (event) => {
-        connected = false;
+    webSocket[key].onclose = (event) => {
+        connected[key] = false;
         settings.close(event);
-        if (settings.autoReconnect && closed === false) {
-            if (timeoutAutoReconnect != null) {
-                window.clearTimeout(timeoutAutoReconnect);
-                timeoutAutoReconnect = null;
+        if (settings.autoReconnect && closed[key] === false) {
+            if (timeoutAutoReconnect[key] != null) {
+                window.clearTimeout(timeoutAutoReconnect[key]);
+                timeoutAutoReconnect[key] = null;
             }
-            timeoutAutoReconnect = window.setTimeout(()=> { _ws.connect(settings); }, 1000);
+            timeoutAutoReconnect[key] = window.setTimeout(()=> { _ws.connect(key, settings); }, 1000);
         }
     };
-    webSocket.onerror = (error) => {
-        if (timeoutAutoReconnect != null) {
-            window.clearTimeout(timeoutAutoReconnect);
-            timeoutAutoReconnect = null;
+    webSocket[key].onerror = (error) => {
+        if (timeoutAutoReconnect[key] != null) {
+            window.clearTimeout(timeoutAutoReconnect[key]);
+            timeoutAutoReconnect[key] = null;
         }
-        connected = false;
+        connected[key] = false;
         settings.error(error);
-        webSocket.close();
+        webSocket[key].close();
     };
-    webSocket.onmessage = (event) => {
+    webSocket[key].onmessage = (event) => {
         let data = event.data;
         try {
             data = JSON.parse(event.data);
@@ -139,18 +153,22 @@ _ws.connect = (args)=> {
     };
 };
 
-_ws.close = () => {
-    if (timeoutAutoReconnect != null) {
-        window.clearTimeout(timeoutAutoReconnect);
-        timeoutAutoReconnect = null;
+_ws.close = (key = 'default') => {
+    if (timeoutAutoReconnect[key] != null) {
+        window.clearTimeout(timeoutAutoReconnect[key]);
+        timeoutAutoReconnect[key] = null;
     }
-    closed = true;
-    if (connected) {
-        webSocket.close();
+    closed[key] = true;
+    if (connected[key]) {
+        webSocket[key].close();
     }
 };
 
-_ws.send = (args)=> {
+_ws.send = (key = 'default', args)=> {
+    if (!args && key && typeof key === 'object') {
+      args = key;
+      key = 'default';
+    }
     let message = {};
     if (typeof(args) === "string") {
         message.type = 'text';
@@ -166,12 +184,12 @@ _ws.send = (args)=> {
             message.type = "json";
         }
     }
-    if (connected) {
-        webSocket.send(JSON.stringify(message));
+    if (connected[key]) {
+        webSocket[key].send(JSON.stringify(message));
     }
 };
 
-_ws.sendService = (args)=> {
+_ws.sendService = (key = 'default', args)=> {
     let message = {};
     if (typeof(args) === "string") {
         message.type = 'text';
@@ -196,25 +214,26 @@ _ws.sendService = (args)=> {
         }
         message.service = ensureServicePrefix(message.service);
     }
-    if (connected) {
-        webSocket.send(JSON.stringify(message));
+    if (connected[key]) {
+        webSocket[key].send(JSON.stringify(message));
     }
 };
 
-_ws.addListener = (data) => {
+_ws.addListener = (key = 'default', data) => {
     const service = ensureServicePrefix(data.service);
-    if (typeof(servicesListeners[service]) == "undefined") {
-        servicesListeners[service] = [ ];
+    if (typeof(servicesListeners[key][service]) == "undefined") {
+        servicesListeners[key][service] = [ ];
     }
-    servicesListeners[service].push(data);
-    return service +':'+ (servicesListeners[service].length - 1);
+    servicesListeners[key][service].push(data);
+    return key +':'+ service +':'+ (servicesListeners[key][service].length - 1);
 };
 
 _ws.removeListener = (ref) => {
     const refParts = ref.split(':');
-    const service = refParts[0];
-    const index = parseInt(refParts[1], 10);
-    servicesListeners[service].splice(index, 1);
+    const key = refParts[0];
+    const service = refParts[1];
+    const index = parseInt(refParts[2], 10);
+    servicesListeners[key][service].splice(index, 1);
 };
 
 export default _ws;
