@@ -1,3 +1,19 @@
+# 1.1.0 / 2024-12-06
+
+Multiple connections to many endpoints.
+
+# 1.0.8 / 2021-10-13
+
+Bug with endpoint not defined has been solved.
+
+# 1.0.7 / 2021-10-13
+
+Autoload the URL prefix when it is in the development environment.
+
+# 1.0.6 / 2021-10-03
+
+Autoload the URL prefix when starts with slash.
+
 # 1.0.5 / 2021-07-02
 
 When close, stop the background auto-reconnect timer.
