@@ -12,10 +12,10 @@ const config = {
     url: null,
     servicesPrefix: '/services',
     method: 'GET',
-    connect: (event) => { },
-    close: (event) => { },
-    error: (error) => { },
-    message: (data, event) => { },
+    connect: () => { },
+    close: () => { },
+    error: () => { },
+    message: () => { },
     autoReconnect: true
   }
 };
@@ -93,9 +93,9 @@ _ws.connect = (keyOrArgs = 'default', args)=> {
         webSocket[key].close();
     }
     let { url } = settings;
-    if (url && url.indexOf('/') == 0) {
+    if (url && url.indexOf('/') === 0) {
         let protocol = 'ws:';
-        if (window.location.protocol == 'https:') {
+        if (window.location.protocol === 'https:') {
             protocol = 'wss:';
         }
         let frontendServer = false;
@@ -105,11 +105,11 @@ _ws.connect = (keyOrArgs = 'default', args)=> {
             hostname = window.location.host.substring(0, window.location.host.indexOf(':'));
             port = window.location.host.substring(window.location.host.indexOf(':') + 1);
         }
-        if (port == '3000') {
+        if (port === '3000') {
             frontendServer = true;
             port = '9000';
         }
-        if (port.length > 2 && port.substring(port.length - 2, port.length) == '30') {
+        if (port.length > 2 && port.substring(port.length - 2, port.length) === '30') {
             frontendServer = true;
             port = port.substring(0, port.length - 2) + '90';
         }
@@ -157,14 +157,17 @@ _ws.connect = (keyOrArgs = 'default', args)=> {
         settings.message(data, event, key);
         if (typeof(data.service) == "string") {
             const service = ensureServicePrefix(key, data.service);
-            getServiceListeners(key, service).forEach((listenerData) => {
-                if (typeof(listenerData.method) !== "string"
-                    || listenerData.method.toUpperCase() === data.method.toUpperCase()) {
-                    if (listenerData.success && data.status >= 200 && data.status <= 299) {
-                        listenerData.success(data, event);
-                    } else if (listenerData.fail) {
-                        listenerData.fail(data, event);
+            getServiceListeners(key, service).forEach((listener) => {
+                if (typeof(listener.method) !== "string"
+                    || listener.method.toUpperCase() === data.method.toUpperCase()) {
+                    if (listener.success && data.status >= 200 && data.status <= 299) {
+                        listener.success(data, event);
+                    } else if (listener.fail) {
+                        listener.fail(data, event);
                     }
+                }
+                if (listener.end) {
+                    listener.end();
                 }
             });
         }
@@ -238,7 +241,33 @@ _ws.sendService = (keyOrArgs = 'default', args)=> {
         }
         message.service = ensureServicePrefix(key, message.service);
     }
+    if (args.start) {
+        args.start();
+    }
+    if (args.success || args.fail) {
+        (() => {
+            const listenerRef = _ws.addListener(key, {
+                method: args.method,
+                service: args.service,
+                start: args.start,
+                success: args.success,
+                fail: args.fail,
+                end: ()=> {
+                    _ws.removeListener(listenerRef);
+                    if (args.end) {
+                        args.end();
+                    }
+                }
+            });
+        })();
+    }
     if (connected[key]) {
+        const service = ensureServicePrefix(key, args.service);
+        getServiceListeners(key, service).forEach((listener) => {
+            if (listener.start) {
+                listener.start();
+            }
+        });
         webSocket[key].send(JSON.stringify(message));
     }
 };
