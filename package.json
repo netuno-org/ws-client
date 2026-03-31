@@ -1,6 +1,6 @@
 {
     "name": "@netuno/ws-client",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "",
     "main": "index.js",
     "scripts": {
@@ -23,7 +23,7 @@
         "utility"
     ],
     "dependencies": {
-        "just-extend": "^4.2.1"
+        "just-extend": "^6.2.0"
     },
     "files": [
         "LICENSE",
