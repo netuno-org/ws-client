@@ -1,6 +1,6 @@
 # ws-client
 
-WebSocket integrations with services of the Netuno Platform.
+WebSocket integrations for the Netuno Platform services.
 
 <a href="https://www.npmjs.com/package/@netuno/ws-client"><img src="https://img.shields.io/npm/v/@netuno/ws-client.svg?style=flat" alt="npm version"></a>
 

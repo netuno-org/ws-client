@@ -1,7 +1,7 @@
 {
     "name": "@netuno/ws-client",
     "version": "1.2.0",
-    "description": "",
+    "description": "WebSocket integrations for the Netuno Platform services.",
     "main": "index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
