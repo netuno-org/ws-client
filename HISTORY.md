@@ -1,3 +1,9 @@
+# 1.2.0 / 2026-03-31
+
+Send service directly supports the listener events definition for simple cases.
+
+Listeners support new events for `start` and `end`, execute callback functions before sending the service, and after the service response.
+
 # 1.1.0 / 2024-12-06
 
 Multiple connections to many endpoints.
