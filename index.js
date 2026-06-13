@@ -43,7 +43,7 @@ const getServiceListeners = (key, service) => {
         servicesListeners[key] = {};
     }
     if (typeof(servicesListeners[key][service]) == "undefined") {
-        servicesListeners[key][service] = [ ];
+        servicesListeners[key][service] = {counter: 0};
     }
     return servicesListeners[key][service];
 };
@@ -150,14 +150,17 @@ _ws.connect = (keyOrArgs = 'default', args)=> {
     };
     webSocket[key].onmessage = (event) => {
         let data = event.data;
-        console.log('message event', event);
         try {
             data = JSON.parse(event.data);
         } catch { }
         settings.message(data, event, key);
         if (typeof(data.service) == "string") {
             const service = ensureServicePrefix(key, data.service);
-            getServiceListeners(key, service).forEach((listener) => {
+            const listeners = getServiceListeners(key, service);
+            Object.values(listeners).forEach((listener) => {
+                if (typeof listener !== 'object') {
+                    return;
+                }
                 if (typeof(listener.method) !== "string"
                     || listener.method.toUpperCase() === data.method.toUpperCase()) {
                     if (listener.success && data.status >= 200 && data.status <= 299) {
@@ -246,14 +249,16 @@ _ws.sendService = (keyOrArgs = 'default', args)=> {
     }
     if (args.success || args.fail) {
         (() => {
-            const listenerRef = _ws.addListener(key, {
+            const listener = {};
+            listener.ref = _ws.addListener(key, {
                 method: args.method,
                 service: args.service,
                 start: args.start,
                 success: args.success,
                 fail: args.fail,
                 end: ()=> {
-                    _ws.removeListener(listenerRef);
+                    console.warn("WS Send Service has Listener Removed: "+ listener.ref);
+                    _ws.removeListener(listener.ref);
                     if (args.end) {
                         args.end();
                     }
@@ -263,7 +268,11 @@ _ws.sendService = (keyOrArgs = 'default', args)=> {
     }
     if (connected[key]) {
         const service = ensureServicePrefix(key, args.service);
-        getServiceListeners(key, service).forEach((listener) => {
+        const listeners = getServiceListeners(key, service);
+        Object.values(listeners).forEach((listener) => {
+            if (typeof listener !== 'object') {
+                return;
+            }
             if (listener.start) {
                 listener.start();
             }
@@ -279,16 +288,54 @@ _ws.addListener = (keyOrData = 'default', data) => {
         key = 'default';
     }
     const service = ensureServicePrefix(key, data.service);
-    getServiceListeners(key, service).push(data);
-    return key +'~|~'+ service +'~|~'+ (getServiceListeners(key, service).length - 1);
+    const listeners = getServiceListeners(key, service);
+    const id = listeners.counter++;
+    listeners[id] = data;
+    return key +'~|~'+ service +'~|~'+ id;
 };
 
 _ws.removeListener = (ref) => {
     const refParts = ref.split('~|~');
     const key = refParts[0];
     const service = refParts[1];
-    const index = parseInt(refParts[2], 10);
-    getServiceListeners(key, service).splice(index, 1);
+    const id = refParts[2];
+    delete getServiceListeners(key, service)[id];
+};
+
+_ws.getAllListeners = (key = 'default', service) => {
+    if (servicesListeners[key]) {
+        if (!service) {
+            const listeners = {};
+            for (const s of Object.keys(servicesListeners[key])) {
+                const sListeners = {...getServiceListeners(key, s)};
+                delete sListeners.counter;
+                listeners[s] = sListeners;
+            }
+            return listeners;
+        }
+        service = ensureServicePrefix(key, service);
+        if (servicesListeners[key][service]) {
+            const listeners = {...getServiceListeners(key, service)};
+            delete listeners.counter;
+            return listeners;
+        }
+    }
+    return null;
+};
+
+_ws.removeAllListeners = (key = 'default', service) => {
+    if (servicesListeners[key]) {
+        if (!service) {
+            delete servicesListeners[key];
+            return true;
+        }
+        service = ensureServicePrefix(key, service);
+        if (servicesListeners[key][service]) {
+            delete servicesListeners[key][service];
+            return true;
+        }
+    }
+    return false;
 };
 
 export default _ws;
