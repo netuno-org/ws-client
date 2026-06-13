@@ -10,46 +10,50 @@ This module makes is easy to support WebSocket in web applications.
 
 ### Install
 
-`bun add @netuno/ws-client`
+```bash
+bun add @netuno/ws-client
+```
 
 ### Import
 
-`import _ws from '@netuno/ws-client';`
+```js
+import _ws from '@netuno/ws-client';
+```
 
 ### Config
 
 Defines the main events:
 
-```
+```js
 _ws.config({
     url: 'ws://localhost:9000/ws/example',
     servicesPrefix: '/services',
     method: 'GET',
     autoReconnect: true,
     connect: (event) => {
-        ...
+        // ...
     },
     close: (event) => {
-        ...
+        // ...
     },
     error: (error) => {
-        ...
+        // ...
     },
     message: (data, event) => {
-        ...
+        // ...
     }
 });
 ```
 
 ### Connect
 
-```
+```js
 _ws.connect();
 ```
 
 ### Close
 
-```
+```js
 _ws.close();
 ```
 
@@ -68,25 +72,37 @@ The listener will execute these events when the service specified are executed:
 
 See how to define a listener:
 
-```
+```js
 const listenerRef = _ws.addListener({
     method: 'GET', // Optional
     service: "my/service",
-    start: () => { ... }, // Optional
+    start: () => { /* ... */ }, // Optional
     success: (data) => {
-        ...
+        // ...
     },
     fail: (error)=> {
-        ...
+        // ...
     },
-    end: () => { ... } // Optional
+    end: () => { /* ... */ } // Optional
 });
 ```
 
 Remove listener:
 
-```
+```js
 _ws.removeListener(listenerRef);
+```
+
+To inspect all listeners: 
+
+```js
+console.warn("WS :: All Listeners:", _ws.getAllListener());
+```
+
+To remove all listeners:
+
+```js
+_ws.removeAllListener();
 ```
 
 ### Send Service
@@ -95,7 +111,7 @@ Send data to the service, and the output comes in the listener defined.
 
 > The service path and the HTTP method must be specified, which by default is GET.
 
-```
+```js
 _ws.sendService({
     method: 'GET', // Optional
     service: 'my/service',
@@ -115,21 +131,21 @@ It is useful when it is not necessary to keep the listener, for one-time service
 
 > In the background, a listener is auto-created, and it is auto-removed in the end.
 
-```
+```js
 _ws.sendService({
     method: 'POST', // Optional
     service: 'my/service',
     data: {
         param: 'code' 
     },
-    start: () => { ... }, // Optional
+    start: () => { /* ... */ }, // Optional
     success: (data) => {
-        ...
+        // ...
     },
     fail: (error)=> {
-        ...
+        // ...
     },
-    end: () => { ... } // Optional
+    end: () => { /* ... */ } // Optional
 });
 ```
 
