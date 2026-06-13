@@ -1,3 +1,9 @@
+# 1.3.0 / 2026-06-13
+
+Listeners management refactored and optimized for better uniqueness.
+
+New methods for getting and removing all listeners.
+
 # 1.2.0 / 2026-03-31
 
 Send service directly supports the listener events definition for simple cases.
