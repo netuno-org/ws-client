@@ -6,7 +6,7 @@ WebSocket integrations for the Netuno Platform services.
 
 More about the [Netuno Platform](https://netuno.org/).
 
-This module makes is easy to support WebSocket in web applications.
+This module makes it easy to call Netuno services over WebSocket in browser applications.
 
 ### Install
 
@@ -22,28 +22,45 @@ import _ws from '@netuno/ws-client';
 
 ### Config
 
-Defines the main events:
+Configure the default connection before opening it. `url` accepts an absolute `ws://` or `wss://` URL, or a root-relative path such as `/ws/example`:
 
 ```js
 _ws.config({
     url: 'ws://localhost:9000/ws/example',
     servicesPrefix: '/services',
-    method: 'GET',
     autoReconnect: true,
-    connect: (event) => {
+    connect: (event, key) => {
         // ...
     },
-    close: (event) => {
+    close: (event, key) => {
         // ...
     },
-    error: (error) => {
+    error: (error, key) => {
         // ...
     },
-    message: (data, event) => {
+    message: (data, event, key) => {
         // ...
     }
 });
 ```
+
+The defaults are `url: null`, `servicesPrefix: '/services'`, `method: 'GET'`, `autoReconnect: true`, and no-op `connect`, `close`, `error`, and `message` callbacks. The connection-level `method` value is retained for compatibility but is not read when sending services; `sendService` applies its own `GET` default. The `message` callback receives every incoming message, and JSON messages are parsed before delivery. Calling `_ws.config()` without arguments returns a copy of the current default configuration.
+
+### Public API
+
+| API | Behavior |
+| --- | --- |
+| `_ws([key], [options])` | Shorthand for `_ws.connect([key], [options])`. |
+| `_ws.config([key], [settings])` | Merges settings and returns a detached copy for the default or named connection. |
+| `_ws.isConnected([key])` | Reports whether the selected socket is open. |
+| `_ws.connect([key], [options])` | Opens the selected connection, replacing an already connected socket. |
+| `_ws.close([key])` | Intentionally closes the socket and cancels pending reconnection. |
+| `_ws.send([key], message)` | Sends a text or JSON-style message only when connected. |
+| `_ws.sendService([key], request)` | Prefixes and sends a service request, with optional inline listener callbacks. |
+| `_ws.addListener([key], listener)` | Registers a service listener and returns its reference string. |
+| `_ws.removeListener(reference)` | Removes the listener encoded by a reference returned from `addListener`. |
+| `_ws.getAllListeners([key], [service])` | Returns listener maps for a connection or service, or `null` when none were registered. |
+| `_ws.removeAllListeners([key], [service])` | Removes all matching listeners and reports whether anything matched. |
 
 ### Connect
 
@@ -51,24 +68,50 @@ _ws.config({
 _ws.connect();
 ```
 
+Check the connection state with `_ws.isConnected()`.
+
 ### Close
 
 ```js
 _ws.close();
 ```
 
+An intentional close also cancels automatic reconnection.
+
+### Multiple Connections
+
+Pass a key as the first argument to maintain an independent connection. A named connection must provide its complete configuration:
+
+```js
+_ws.config('notifications', {
+    url: '/ws/notifications',
+    servicesPrefix: '/services',
+    autoReconnect: true,
+    connect: () => {},
+    close: () => {},
+    error: () => {},
+    message: () => {}
+});
+
+_ws.connect('notifications');
+_ws.isConnected('notifications');
+_ws.close('notifications');
+```
+
+The connection key can likewise be supplied as the first argument to `send`, `sendService`, `addListener`, `getAllListeners`, and `removeAllListeners`.
+
 ### Listener
 
 The listener observes the execution of a specific service and is used to inject behaviors such as events.
 
-The listener will execute these events when the service specified are executed:
+The listener executes these callbacks when the specified service is called:
 
 - `start` - before the service request is sent via WebSocket.
-- `success` - if the service executed very well.
-- `fail` - if the service gives an error.
-- `end` - after the service execution is ended.
+- `success` - when the response status is between 200 and 299.
+- `fail` - when the response status is outside the 200–299 range.
+- `end` - after the service response is handled.
 
-> The listener must specify the HTTP method, which is `GET` by default.
+> The service path is required. The HTTP method is optional; when omitted, the listener accepts responses for every method on that service.
 
 See how to define a listener:
 
@@ -93,23 +136,45 @@ Remove listener:
 _ws.removeListener(listenerRef);
 ```
 
-To inspect all listeners: 
+To inspect all listeners:
 
 ```js
-console.warn("WS :: All Listeners:", _ws.getAllListener());
+console.warn("WS :: All Listeners:", _ws.getAllListeners());
 ```
+
+Pass a service path as the second argument to inspect only that service on a keyed connection, for example `_ws.getAllListeners('default', 'my/service')`. The method returns `null` when there are no matching listeners.
 
 To remove all listeners:
 
 ```js
-_ws.removeAllListener();
+_ws.removeAllListeners();
 ```
+
+`removeAllListeners` also accepts an optional connection key and service path. It returns `true` when it removed listeners and `false` when none matched.
+
+### Send a Message
+
+Send a plain text payload or a message object over the default connection:
+
+```js
+_ws.send({
+    content: 'Hello'
+});
+
+_ws.send({
+    content: {
+        action: 'refresh'
+    }
+});
+```
+
+Messages are sent only while the selected WebSocket is connected.
 
 ### Send Service
 
-Send data to the service, and the output comes in the listener defined.
+Send data to a service; matching listeners receive its response.
 
-> The service path and the HTTP method must be specified, which by default is GET.
+> The service path is required. The HTTP method is optional and defaults to `GET`.
 
 ```js
 _ws.sendService({
@@ -123,13 +188,13 @@ _ws.sendService({
 
 ### Send Service with a Listener
 
-Send service directly supports the listener events definition for simple cases.
+`sendService` also accepts listener callbacks directly for simple, one-time requests.
 
 Send data to the service, and the output will be received in the `success` or `fail` event.
 
 It is useful when it is not necessary to keep the listener, for one-time service execution.
 
-> In the background, a listener is auto-created, and it is auto-removed in the end.
+> A temporary listener is created in the background and removed after the response is handled.
 
 ```js
 _ws.sendService({
@@ -151,8 +216,7 @@ _ws.sendService({
 
 ## React Integration
 
-When integrating with React, it's recommended to load the listener within the `useEffect` method used to create 
-the component.
+When integrating with React, register the listener in a `useEffect` hook.
 
 The `useEffect` return function removes the listener when the component is destroyed.
 
