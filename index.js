@@ -101,7 +101,7 @@ _ws.connect = (keyOrArgs = 'default', args)=> {
         let frontendServer = false;
         let hostname = '';
         let port = '';
-        if (window.location.host.indexOf(':')) {
+        if (window.location.host.indexOf(':') !== -1) {
             hostname = window.location.host.substring(0, window.location.host.indexOf(':'));
             port = window.location.host.substring(window.location.host.indexOf(':') + 1);
         }
