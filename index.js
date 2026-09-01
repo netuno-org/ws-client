@@ -75,6 +75,11 @@ _ws.isConnected = (key = 'default')=> {
     return connected[key];
 };
 
+/**
+ * Connect to the WebSocket service.
+ * @param {string|object} keyOrArgs - Optional configuration key or arguments.
+ * @param {object} args - Arguments to pass to the connect configuration.
+ */
 _ws.connect = (keyOrArgs = 'default', args)=> {
     let key = keyOrArgs;
     if (!args && keyOrArgs && typeof keyOrArgs === 'object') {
@@ -177,6 +182,10 @@ _ws.connect = (keyOrArgs = 'default', args)=> {
     };
 };
 
+/**
+ * Close the WebSocket connection.
+ * @param {string} key - Configuration key (default is 'default').
+ */
 _ws.close = (key = 'default') => {
     if (timeoutAutoReconnect[key] != null) {
         window.clearTimeout(timeoutAutoReconnect[key]);
@@ -188,6 +197,15 @@ _ws.close = (key = 'default') => {
     }
 };
 
+/**
+ * Send a simple message through the WebSocket.
+ * Call as `send(message)` where message is an object, or as `send(key, message)` to target a
+ * named connection. A bare string first argument is treated as the connection key, not the
+ * message, so to send a plain text message pass it as the second argument (`send(key, 'text')`)
+ * or wrap it in an object (`send({ content: 'text' })`).
+ * @param {string|object} keyOrArgs - Connection key (string), or the message object for the default connection.
+ * @param {object|string} [args] - The message to send when the first argument is a connection key: an object, or a string sent as text.
+ */
 _ws.send = (keyOrArgs = 'default', args)=> {
     let key = keyOrArgs;
     if (!args && keyOrArgs && typeof keyOrArgs === 'object') {
@@ -214,6 +232,11 @@ _ws.send = (keyOrArgs = 'default', args)=> {
     }
 };
 
+/**
+ * Send data to a specific service and optionally listen for the response.
+ * @param {string|object} keyOrArgs - Optional configuration key or arguments (service parameters).
+ * @param {object} args - The service parameters, including 'service', 'method', 'data', and event callbacks ('start', 'success', 'fail', 'end').
+ */
 _ws.sendService = (keyOrArgs = 'default', args)=> {
     let key = keyOrArgs;
     if (!args && keyOrArgs && typeof keyOrArgs === 'object') {
@@ -281,6 +304,12 @@ _ws.sendService = (keyOrArgs = 'default', args)=> {
     }
 };
 
+/**
+ * Add a listener for a specific service.
+ * @param {string|object} keyOrData - Optional configuration key or listener data.
+ * @param {object} data - Listener data including 'service', 'method', 'start', 'success', 'fail', 'end'.
+ * @returns {string} The listener reference string.
+ */
 _ws.addListener = (keyOrData = 'default', data) => {
     let key = keyOrData;
     if (!data && keyOrData && typeof keyOrData === 'object') {
@@ -294,6 +323,10 @@ _ws.addListener = (keyOrData = 'default', data) => {
     return key +'~|~'+ service +'~|~'+ id;
 };
 
+/**
+ * Remove a previously added listener.
+ * @param {string} ref - The listener reference string returned by addListener.
+ */
 _ws.removeListener = (ref) => {
     const refParts = ref.split('~|~');
     const key = refParts[0];
@@ -302,6 +335,12 @@ _ws.removeListener = (ref) => {
     delete getServiceListeners(key, service)[id];
 };
 
+/**
+ * Get all registered listeners.
+ * @param {string} key - Configuration key (default is 'default').
+ * @param {string} service - Optional service name to filter by.
+ * @returns {object|null} The registered listeners.
+ */
 _ws.getAllListeners = (key = 'default', service) => {
     if (servicesListeners[key]) {
         if (!service) {
@@ -323,6 +362,12 @@ _ws.getAllListeners = (key = 'default', service) => {
     return null;
 };
 
+/**
+ * Remove all registered listeners.
+ * @param {string} key - Configuration key (default is 'default').
+ * @param {string} service - Optional service name to filter by.
+ * @returns {boolean} True if listeners were successfully removed.
+ */
 _ws.removeAllListeners = (key = 'default', service) => {
     if (servicesListeners[key]) {
         if (!service) {
