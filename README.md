@@ -59,8 +59,8 @@ The defaults are `url: null`, `servicesPrefix: '/services'`, `method: 'GET'`, `a
 | `_ws.sendService([key], request)` | Prefixes and sends a service request, with optional inline listener callbacks. |
 | `_ws.addListener([key], listener)` | Registers a service listener and returns its reference string. |
 | `_ws.removeListener(reference)` | Removes the listener encoded by a reference returned from `addListener`. |
-| `_ws.getAllListeners([key], [service])` | Returns listener maps for a connection or service, or `null` when none were registered. |
-| `_ws.removeAllListeners([key], [service])` | Removes all matching listeners and reports whether anything matched. |
+| `_ws.getAllListeners([key], [service])` | Returns listener maps for a connection or service. Returns `null` only when the connection has no listener registry yet, or when a specific service has no listeners. |
+| `_ws.removeAllListeners([key], [service])` | Clears listeners for a connection or specific service. Returns `true` when a registry existed and was cleared, otherwise `false`. |
 
 ### Connect
 
