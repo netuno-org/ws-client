@@ -77,8 +77,8 @@ _ws.isConnected = (key = 'default')=> {
 
 /**
  * Connect to the WebSocket service.
- * @param {string|object} keyOrArgs - Optional configuration key or arguments.
- * @param {object} args - Arguments to pass to the connect configuration.
+ * @param {string|object} [keyOrArgs='default'] - Configuration key, or an arguments object for the default connection.
+ * @param {object} [args] - Arguments to merge into the connection configuration when the first argument is a key.
  */
 _ws.connect = (keyOrArgs = 'default', args)=> {
     let key = keyOrArgs;
